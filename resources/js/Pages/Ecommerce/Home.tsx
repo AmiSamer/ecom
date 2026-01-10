@@ -92,7 +92,7 @@ export default function Home({ auth, featuredProducts = [] }: HomeProps) {
                             Welcome to ShopHub
                         </h1>
                         <p className="text-xl md:text-2xl mb-8 text-indigo-100">
-                            Discover amazing products at unbeatable prices
+                            Discover amazing products at best prices
                         </p>
                         <Link
                             href="/products"

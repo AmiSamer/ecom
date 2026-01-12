@@ -8,6 +8,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Admin\ProductCategoryController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\SalesReportController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -53,6 +54,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     
     // Users
     Route::resource('users', UserController::class);
+    
+    // Sales Reports
+    Route::get('reports', [SalesReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/{report}', [SalesReportController::class, 'show'])->name('reports.show');
 });
 
 require __DIR__.'/auth.php';

@@ -11,19 +11,26 @@ interface AuthenticatedLayoutProps {
 }
 
 interface AuthUser {
+    id: number;
     name: string;
     email: string;
+    role_id: number;
+    role?: {
+        id: number;
+        name: string;
+    } | null;
 }
 
 interface PageProps {
     auth: {
-        user: AuthUser;
+        user: AuthUser | null;
     };
     [key: string]: any;
 }
 
 export default function AuthenticatedLayout({ header, children }: AuthenticatedLayoutProps) {
-    const user = (usePage().props as unknown as PageProps).auth.user;
+    const auth = (usePage().props as unknown as PageProps).auth;
+    const user = auth.user;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
@@ -41,12 +48,21 @@ export default function AuthenticatedLayout({ header, children }: AuthenticatedL
                             </div>
 
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                >
-                                    Dashboard
-                                </NavLink>
+                                {user?.role_id === 1 ? (
+                                    <NavLink
+                                        href={route('dashboard')}
+                                        active={route().current('dashboard')}
+                                    >
+                                        Dashboard
+                                    </NavLink>
+                                ) : (
+                                    <NavLink
+                                        href={route('home')}
+                                        active={route().current('home')}
+                                    >
+                                        Homepage
+                                    </NavLink>
+                                )}
                             </div>
                         </div>
 
@@ -145,12 +161,21 @@ export default function AuthenticatedLayout({ header, children }: AuthenticatedL
                     }
                 >
                     <div className="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            href={route('dashboard')}
-                            active={route().current('dashboard')}
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
+                        {user?.role_id === 1 ? (
+                            <ResponsiveNavLink
+                                href={route('dashboard')}
+                                active={route().current('dashboard')}
+                            >
+                                Dashboard
+                            </ResponsiveNavLink>
+                        ) : (
+                            <ResponsiveNavLink
+                                href={route('home')}
+                                active={route().current('home')}
+                            >
+                                Homepage
+                            </ResponsiveNavLink>
+                        )}
                     </div>
 
                     <div className="border-t border-gray-200 pb-1 pt-4">

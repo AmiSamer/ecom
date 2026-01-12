@@ -7,6 +7,10 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function Login({ status, canResetPassword }) {
+    // Get return URL from query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('return');
+
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -16,7 +20,13 @@ export default function Login({ status, canResetPassword }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('login'), {
+        // Build login URL with return parameter if it exists
+        let loginUrl = route('login');
+        if (returnUrl) {
+            loginUrl += '?return=' + encodeURIComponent(returnUrl);
+        }
+
+        post(loginUrl, {
             onFinish: () => reset('password'),
         });
     };

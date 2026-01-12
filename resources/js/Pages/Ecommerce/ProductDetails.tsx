@@ -1,7 +1,8 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 import EcommerceLayout from '@/Layouts/EcommerceLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
+import Swal from 'sweetalert2';
 
 interface Product {
     id: number;
@@ -28,24 +29,169 @@ interface ProductDetailsProps {
         } | null;
     };
     product: Product;
+    csrf_token?: string;
 }
 
 export default function ProductDetails({ auth, product }: ProductDetailsProps) {
+    const { props } = usePage();
+    const pageProps = props as unknown as { csrf_token?: string };
+    const csrfToken = pageProps.csrf_token || '';
+    
+    // Update meta tag with fresh CSRF token
+    useEffect(() => {
+        if (csrfToken) {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag) {
+                metaTag.setAttribute('content', csrfToken);
+            }
+        }
+    }, [csrfToken]);
+    
     const [selectedImage, setSelectedImage] = useState(product.images[0] || '');
     const [quantity, setQuantity] = useState(1);
 
-    const handleAddToCart = () => {
-        // This would typically call an API endpoint
-        alert(`Added ${quantity} ${product.name} to cart!`);
+    const [addingToCart, setAddingToCart] = useState(false);
+
+    const handleAddToCart = async () => {
+        if (!auth?.user) {
+            // Preserve the current URL so user can return after login
+            const returnUrl = window.location.pathname + window.location.search;
+            router.visit(route('login') + '?return=' + encodeURIComponent(returnUrl));
+            return;
+        }
+
+        setAddingToCart(true);
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!csrfToken) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'CSRF token not found. Please refresh the page.',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#ef4444',
+                });
+                setAddingToCart(false);
+                return;
+            }
+
+            const response = await fetch(route('cart.store'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    product_id: product.id,
+                    quantity: quantity,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Trigger cart count update event
+                window.dispatchEvent(new CustomEvent('cartUpdated'));
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Added to Cart!',
+                    text: `Added ${quantity} ${product.name} to cart`,
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4f46e5',
+                    timer: 2000,
+                    timerProgressBar: true,
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Failed to add to cart',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#ef4444',
+                });
+            }
+        } catch (error) {
+            console.error('Cart error:', error);
+            alert('An error occurred. Please try again.');
+        } finally {
+            setAddingToCart(false);
+        }
     };
 
-    const handleBuyNow = () => {
-        // Navigate to checkout
-        router.visit(`/checkout?product=${product.id}&quantity=${quantity}`);
+    const handleBuyNow = async () => {
+        if (!auth?.user) {
+            // Redirect to login, then to checkout after login
+            router.visit(route('login') + '?return=' + encodeURIComponent(route('checkout')));
+            return;
+        }
+
+        // Add to cart first, then go to checkout
+        setAddingToCart(true);
+        try {
+            // Use CSRF token from Inertia props (always fresh)
+            const token = csrfToken || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!token) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'CSRF token not found. Please refresh the page.',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#ef4444',
+                });
+                setAddingToCart(false);
+                return;
+            }
+
+            const response = await fetch(route('cart.store'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    product_id: product.id,
+                    quantity: quantity,
+                }),
+            });
+
+            if (response.ok) {
+                // Trigger cart count update event
+                window.dispatchEvent(new CustomEvent('cartUpdated'));
+                
+                router.visit(route('checkout'));
+            } else {
+                const data = await response.json();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Failed to add to cart',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#ef4444',
+                });
+            }
+        } catch (error) {
+            console.error('Cart error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred. Please try again.',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#ef4444',
+            });
+        } finally {
+            setAddingToCart(false);
+        }
     };
 
     return (
-        <EcommerceLayout auth={auth}>
+        <EcommerceLayout>
             <Head title={`${product.name} - ShopHub`} />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -129,12 +275,12 @@ export default function ProductDetails({ auth, product }: ProductDetailsProps) {
                         <div className="mb-6">
                             <div className="flex items-baseline space-x-3">
                                 <span className="text-4xl font-bold text-indigo-600">
-                                    ${product.price.toFixed(2)}
+                                    ৳{product.price.toLocaleString('en-BD', { minimumFractionDigits: 2 })}
                                 </span>
                                 {product.originalPrice && product.originalPrice > product.price && (
                                     <>
                                         <span className="text-2xl text-gray-400 line-through">
-                                            ${product.originalPrice.toFixed(2)}
+                                            ৳{product.originalPrice.toLocaleString('en-BD', { minimumFractionDigits: 2 })}
                                         </span>
                                         <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-sm font-semibold">
                                             {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
@@ -197,15 +343,17 @@ export default function ProductDetails({ auth, product }: ProductDetailsProps) {
                             <div className="flex space-x-4 mb-8">
                                 <button
                                     onClick={handleAddToCart}
-                                    className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
+                                    disabled={addingToCart}
+                                    className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Add to Cart
+                                    {addingToCart ? 'Adding...' : 'Add to Cart'}
                                 </button>
                                 <button
                                     onClick={handleBuyNow}
-                                    className="flex-1 bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition"
+                                    disabled={addingToCart}
+                                    className="flex-1 bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Buy Now
+                                    {addingToCart ? 'Processing...' : 'Buy Now'}
                                 </button>
                             </div>
                         )}

@@ -33,7 +33,30 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+        
+        // Check if there's a return URL parameter (highest priority)
+        $returnUrl = $request->input('return');
+        if ($returnUrl) {
+            return redirect($returnUrl);
+        }
+        
+        // Check if there's an intended URL in session
+        $intended = $request->session()->pull('url.intended');
+        if ($intended) {
+            // Only redirect to intended URL if user has access (not admin routes for regular users)
+            if ($user->isAdmin() || !str_starts_with($intended, '/admin')) {
+                return redirect($intended);
+            }
+        }
+        
+        // Default redirect based on user role
+        if ($user->isAdmin()) {
+            return redirect()->route('dashboard');
+        }
+        
+        // Regular users go to home page
+        return redirect()->route('home');
     }
 
     /**

@@ -4,13 +4,14 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +22,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role_id',
+        'status',
+        'updated_by',
     ];
 
     /**
@@ -43,6 +47,39 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'status' => 'integer',
         ];
+    }
+
+    /**
+     * Get the role that owns the user.
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Check if user is admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role_id === 1;
+    }
+
+    /**
+     * Check if user is regular user.
+     */
+    public function isUser(): bool
+    {
+        return $this->role_id === 2;
+    }
+
+    /**
+     * Check if user is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->status === 1;
     }
 }

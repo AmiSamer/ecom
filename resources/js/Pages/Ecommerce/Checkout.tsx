@@ -1,17 +1,30 @@
-import { Head, Link } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import EcommerceLayout from '@/Layouts/EcommerceLayout';
 import TextInput from '@/Components/TextInput';
 import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
+import { Link } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 
 interface CartItem {
     id: number;
-    name: string;
+    product_id: number;
+    product_name: string;
+    product_slug: string;
+    product_image: string | null;
     price: number;
     quantity: number;
-    image: string;
+    subtotal: number;
+    stock: number;
+    in_stock: boolean;
+}
+
+interface CartData {
+    items: CartItem[];
+    total: number;
+    item_count: number;
 }
 
 interface CheckoutProps {
@@ -21,85 +34,248 @@ interface CheckoutProps {
             email: string;
         } | null;
     };
-    cartItems?: CartItem[];
 }
 
-export default function Checkout({ auth, cartItems = [] }: CheckoutProps) {
-    const [formData, setFormData] = useState({
-        email: auth?.user?.email || '',
-        firstName: '',
-        lastName: '',
-        address: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: 'United States',
-        phone: '',
-        cardNumber: '',
-        cardName: '',
-        expiryDate: '',
-        cvv: '',
-        sameAsShipping: false,
+export default function Checkout({ auth }: CheckoutProps) {
+    const { props } = usePage();
+    const pageProps = props as unknown as { csrf_token?: string };
+    const csrfToken = pageProps.csrf_token || '';
+    
+    const [cart, setCart] = useState<CartData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [cartLoading, setCartLoading] = useState(false);
+
+    // Update meta tag with fresh CSRF token
+    useEffect(() => {
+        if (csrfToken) {
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag) {
+                metaTag.setAttribute('content', csrfToken);
+            }
+        }
+    }, [csrfToken]);
+
+    const { data, setData, errors } = useForm({
+        contact_name: auth?.user?.name || '',
+        contact_phone: '',
+        shipping_address: '',
+        payment_method: 'cash_on_delivery',
+        notes: '',
     });
 
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-    // Sample cart items if none provided
-    const items: CartItem[] = cartItems.length > 0 ? cartItems : [
-        {
-            id: 1,
-            name: 'Wireless Headphones',
-            price: 99.99,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200',
-        },
-    ];
-
-    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const shipping = 10.00;
-    const tax = subtotal * 0.08;
-    const total = subtotal + shipping + tax;
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-        }));
-        // Clear error when user starts typing
-        if (errors[name]) {
-            setErrors(prev => ({ ...prev, [name]: '' }));
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        // Basic validation
-        const newErrors: { [key: string]: string } = {};
-        
-        if (!formData.email) newErrors.email = 'Email is required';
-        if (!formData.firstName) newErrors.firstName = 'First name is required';
-        if (!formData.lastName) newErrors.lastName = 'Last name is required';
-        if (!formData.address) newErrors.address = 'Address is required';
-        if (!formData.city) newErrors.city = 'City is required';
-        if (!formData.zipCode) newErrors.zipCode = 'ZIP code is required';
-        if (!formData.cardNumber) newErrors.cardNumber = 'Card number is required';
-        if (!formData.cardName) newErrors.cardName = 'Cardholder name is required';
-        if (!formData.expiryDate) newErrors.expiryDate = 'Expiry date is required';
-        if (!formData.cvv) newErrors.cvv = 'CVV is required';
-
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
+    useEffect(() => {
+        if (!auth?.user) {
+            router.visit(route('login'));
             return;
         }
 
-        // Process order (would typically call an API)
-        alert('Order placed successfully!');
+        fetchCart();
+    }, []);
+
+    const fetchCart = async () => {
+        try {
+            const response = await fetch('/api/cart');
+            const cartData = await response.json();
+            setCart(cartData);
+            
+            if (cartData.items.length === 0) {
+                router.visit(route('home'));
+            }
+        } catch (error) {
+            console.error('Failed to fetch cart:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
+    const updateQuantity = async (cartId: number, quantity: number) => {
+        if (quantity < 1) return;
+        
+        setCartLoading(true);
+        try {
+            // Use CSRF token from Inertia props (always fresh)
+            const token = csrfToken || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!token) {
+                alert('CSRF token not found. Please refresh the page.');
+                setCartLoading(false);
+                return;
+            }
+
+            const response = await fetch(route('cart.update', cartId), {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ quantity }),
+            });
+
+            if (response.ok) {
+                await fetchCart();
+                // Trigger cart count update event
+                window.dispatchEvent(new CustomEvent('cartUpdated'));
+            } else {
+                const data = await response.json();
+                alert(data.message || 'Failed to update cart');
+            }
+        } catch (error) {
+            alert('An error occurred. Please try again.');
+        } finally {
+            setCartLoading(false);
+        }
+    };
+
+    const removeItem = async (cartId: number) => {
+        const result = await Swal.fire({
+            title: 'Remove Item?',
+            text: 'Are you sure you want to remove this item from cart?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, remove it',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) return;
+        
+        setCartLoading(true);
+        try {
+            // Use CSRF token from Inertia props (always fresh)
+            const token = csrfToken || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (!token) {
+                alert('CSRF token not found. Please refresh the page.');
+                setCartLoading(false);
+                return;
+            }
+
+            const response = await fetch(route('cart.destroy', cartId), {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (response.ok) {
+                await fetchCart();
+                // Trigger cart count update event
+                window.dispatchEvent(new CustomEvent('cartUpdated'));
+            } else {
+                alert('Failed to remove item');
+            }
+        } catch (error) {
+            alert('An error occurred. Please try again.');
+        } finally {
+            setCartLoading(false);
+        }
+    };
+
+    const [submitting, setSubmitting] = useState(false);
+
+    const submit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        // Use CSRF token from Inertia props (always fresh)
+        const token = csrfToken || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!token) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'CSRF token not found. Please refresh the page.',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#ef4444',
+            });
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const response = await fetch(route('orders.store'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed!',
+                    text: result.message || 'Order placed successfully!',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#4f46e5',
+                }).then(() => {
+                    router.visit(route('home'));
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.message || Object.values(result.errors || {}).join(', ') || 'Failed to place order. Please try again.',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#ef4444',
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'An error occurred. Please try again.',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#ef4444',
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <EcommerceLayout>
+                <Head title="Checkout - ShopHub" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="text-center">Loading...</div>
+                </div>
+            </EcommerceLayout>
+        );
+    }
+
+    if (!cart || cart.items.length === 0) {
+        return (
+            <EcommerceLayout>
+                <Head title="Checkout - ShopHub" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="text-center">
+                        <p className="text-gray-600 mb-4">Your cart is empty.</p>
+                        <Link href={route('home')} className="text-indigo-600 hover:text-indigo-700">
+                            Continue Shopping
+                        </Link>
+                    </div>
+                </div>
+            </EcommerceLayout>
+        );
+    }
+
+    const subtotal = cart.total;
+    const shipping = 0;
+    const tax = 0;
+    const total = subtotal + shipping + tax;
+
     return (
-        <EcommerceLayout auth={auth}>
+        <EcommerceLayout>
             <Head title="Checkout - ShopHub" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -108,201 +284,115 @@ export default function Checkout({ auth, cartItems = [] }: CheckoutProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Checkout Form */}
                     <div className="lg:col-span-2">
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={submit} className="space-y-6">
                             {/* Contact Information */}
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-                                <div>
-                                    <InputLabel htmlFor="email" value="Email" children={undefined} />
-                                    <TextInput
-                                        id="email"
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        className="mt-1 block w-full"
-                                        required
-                                    />
-                                    <InputError message={errors.email} className="mt-2" />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <InputLabel htmlFor="contact_name" value="Full Name *" children={undefined} />
+                                        <TextInput
+                                            id="contact_name"
+                                            type="text"
+                                            value={data.contact_name}
+                                            onChange={(e) => setData('contact_name', e.target.value)}
+                                            className="mt-1 block w-full"
+                                            required
+                                        />
+                                        <InputError message={errors.contact_name} className="mt-2" />
+                                    </div>
+                                    <div>
+                                        <InputLabel htmlFor="contact_phone" value="Phone Number *" children={undefined} />
+                                        <TextInput
+                                            id="contact_phone"
+                                            type="tel"
+                                            value={data.contact_phone}
+                                            onChange={(e) => setData('contact_phone', e.target.value)}
+                                            className="mt-1 block w-full"
+                                            required
+                                        />
+                                        <InputError message={errors.contact_phone} className="mt-2" />
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Shipping Address */}
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <InputLabel htmlFor="firstName" value="First Name" children={undefined} />
-                                        <TextInput
-                                            id="firstName"
-                                            type="text"
-                                            name="firstName"
-                                            value={formData.firstName}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full"
-                                            required
-                                        />
-                                        <InputError message={errors.firstName} className="mt-2" />
-                                    </div>
-                                    <div>
-                                        <InputLabel htmlFor="lastName" value="Last Name" children={undefined} />
-                                        <TextInput
-                                            id="lastName"
-                                            type="text"
-                                            name="lastName"
-                                            value={formData.lastName}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full"
-                                            required
-                                        />
-                                        <InputError message={errors.lastName} className="mt-2" />
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <InputLabel htmlFor="address" value="Address" children={undefined} />
-                                    <TextInput
-                                        id="address"
-                                        type="text"
-                                        name="address"
-                                        value={formData.address}
-                                        onChange={handleChange}
-                                        className="mt-1 block w-full"
-                                        required
-                                    />
-                                    <InputError message={errors.address} className="mt-2" />
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                                    <div>
-                                        <InputLabel htmlFor="city" value="City" children={undefined} />
-                                        <TextInput
-                                            id="city"
-                                            type="text"
-                                            name="city"
-                                            value={formData.city}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full"
-                                            required
-                                        />
-                                        <InputError message={errors.city} className="mt-2" />
-                                    </div>
-                                    <div>
-                                        <InputLabel htmlFor="state" value="State" children={undefined} />
-                                        <TextInput
-                                            id="state"
-                                            type="text"
-                                            name="state"
-                                            value={formData.state}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full"
-                                        />
-                                    </div>
-                                    <div>
-                                        <InputLabel htmlFor="zipCode" value="ZIP Code" children={undefined} />
-                                        <TextInput
-                                            id="zipCode"
-                                            type="text"
-                                            name="zipCode"
-                                            value={formData.zipCode}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full"
-                                            required
-                                        />
-                                        <InputError message={errors.zipCode} className="mt-2" />
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <InputLabel htmlFor="country" value="Country" children={undefined} />
-                                    <select
-                                        id="country"
-                                        name="country"
-                                        value={formData.country}
-                                        onChange={handleChange}
+                                <div>
+                                    <InputLabel htmlFor="shipping_address" value="Address *" children={undefined} />
+                                    <textarea
+                                        id="shipping_address"
+                                        value={data.shipping_address}
+                                        onChange={(e) => setData('shipping_address', e.target.value)}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    >
-                                        <option>United States</option>
-                                        <option>Canada</option>
-                                        <option>United Kingdom</option>
-                                        <option>Australia</option>
-                                    </select>
-                                </div>
-                                <div className="mt-4">
-                                    <InputLabel htmlFor="phone" value="Phone" children={undefined} />
-                                    <TextInput
-                                        id="phone"
-                                        type="tel"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        className="mt-1 block w-full"
+                                        rows={3}
+                                        required
                                     />
+                                    <InputError message={errors.shipping_address} className="mt-2" />
                                 </div>
                             </div>
 
-                            {/* Payment Information */}
+                            {/* Payment Method */}
                             <div className="bg-white rounded-lg shadow p-6">
-                                <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-                                <div className="mt-4">
-                                    <InputLabel htmlFor="cardNumber" value="Card Number" children={undefined} />
-                                    <TextInput
-                                        id="cardNumber"
-                                        type="text"
-                                        name="cardNumber"
-                                        value={formData.cardNumber}
-                                        onChange={handleChange}
-                                        placeholder="1234 5678 9012 3456"
-                                        className="mt-1 block w-full"
-                                        required
-                                    />
-                                    <InputError message={errors.cardNumber} className="mt-2" />
-                                </div>
-                                <div className="mt-4">
-                                    <InputLabel htmlFor="cardName" value="Cardholder Name" children={undefined} />
-                                    <TextInput
-                                        id="cardName"
-                                        type="text"
-                                        name="cardName"
-                                        value={formData.cardName}
-                                        onChange={handleChange}
-                                        className="mt-1 block w-full"
-                                        required
-                                    />
-                                    <InputError message={errors.cardName} className="mt-2" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <InputLabel htmlFor="expiryDate" value="Expiry Date" children={undefined} />
-                                        <TextInput
-                                            id="expiryDate"
-                                            type="text"
-                                            name="expiryDate"
-                                            value={formData.expiryDate}
-                                            onChange={handleChange}
-                                            placeholder="MM/YY"
-                                            className="mt-1 block w-full"
-                                            required
+                                <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+                                <div className="space-y-2">
+                                    <label className="flex items-center">
+                                        <input
+                                            type="radio"
+                                            name="payment_method"
+                                            value="cash_on_delivery"
+                                            checked={data.payment_method === 'cash_on_delivery'}
+                                            onChange={(e) => setData('payment_method', e.target.value)}
+                                            className="mr-2"
                                         />
-                                        <InputError message={errors.expiryDate} className="mt-2" />
-                                    </div>
-                                    <div>
-                                        <InputLabel htmlFor="cvv" value="CVV" children={undefined} />
-                                        <TextInput
-                                            id="cvv"
-                                            type="text"
-                                            name="cvv"
-                                            value={formData.cvv}
-                                            onChange={handleChange}
-                                            placeholder="123"
-                                            className="mt-1 block w-full"
-                                            required
+                                        <span>Cash on Delivery</span>
+                                    </label>
+                                    <label className="flex items-center">
+                                        <input
+                                            type="radio"
+                                            name="payment_method"
+                                            value="card"
+                                            checked={data.payment_method === 'card'}
+                                            onChange={(e) => setData('payment_method', e.target.value)}
+                                            className="mr-2"
                                         />
-                                        <InputError message={errors.cvv} className="mt-2" />
-                                    </div>
+                                        <span>Card Payment</span>
+                                    </label>
+                                    <label className="flex items-center">
+                                        <input
+                                            type="radio"
+                                            name="payment_method"
+                                            value="bank_transfer"
+                                            checked={data.payment_method === 'bank_transfer'}
+                                            onChange={(e) => setData('payment_method', e.target.value)}
+                                            className="mr-2"
+                                        />
+                                        <span>Bank Transfer</span>
+                                    </label>
                                 </div>
+                                <InputError message={errors.payment_method} className="mt-2" />
                             </div>
 
-                            <PrimaryButton type="submit" className="w-full py-3 text-lg" disabled={false}>
-                                Place Order
-                            </PrimaryButton>
+                            {/* Notes */}
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <InputLabel htmlFor="notes" value="Order Notes (Optional)" children={undefined} />
+                                <textarea
+                                    id="notes"
+                                    value={data.notes}
+                                    onChange={(e) => setData('notes', e.target.value)}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    rows={3}
+                                    placeholder="Any special instructions for your order..."
+                                />
+                                <InputError message={errors.notes} className="mt-2" />
+                            </div>
+
+                            <div className="flex justify-end">
+                                <PrimaryButton disabled={submitting || cartLoading}>
+                                    {submitting ? 'Processing...' : 'Place Order'}
+                                </PrimaryButton>
+                            </div>
                         </form>
                     </div>
 
@@ -310,53 +400,77 @@ export default function Checkout({ auth, cartItems = [] }: CheckoutProps) {
                     <div className="lg:col-span-1">
                         <div className="bg-white rounded-lg shadow p-6 sticky top-4">
                             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-                            
+
+                            {/* Cart Items */}
                             <div className="space-y-4 mb-6">
-                                {items.map((item) => (
-                                    <div key={item.id} className="flex items-center space-x-4">
-                                        <img
-                                            src={item.image}
-                                            alt={item.name}
-                                            className="w-16 h-16 object-cover rounded"
-                                        />
+                                {cart.items.map((item) => (
+                                    <div key={item.id} className="flex items-start space-x-4 pb-4 border-b">
+                                        {item.product_image && (
+                                            <img
+                                                src={item.product_image}
+                                                alt={item.product_name}
+                                                className="w-16 h-16 object-cover rounded"
+                                            />
+                                        )}
                                         <div className="flex-1">
-                                            <h3 className="font-medium text-sm">{item.name}</h3>
-                                            <p className="text-gray-600 text-sm">
-                                                Qty: {item.quantity} × ${item.price.toFixed(2)}
-                                            </p>
+                                            <Link
+                                                href={`/products/${item.product_slug}`}
+                                                className="font-medium text-gray-900 hover:text-indigo-600"
+                                            >
+                                                {item.product_name}
+                                            </Link>
+                                            <p className="text-sm text-gray-600">৳{item.price.toLocaleString('en-BD', { minimumFractionDigits: 2 })} × {item.quantity}</p>
+                                            <div className="flex items-center space-x-2 mt-2">
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                    disabled={cartLoading || item.quantity <= 1}
+                                                    className="w-6 h-6 rounded border border-gray-300 flex items-center justify-center disabled:opacity-50"
+                                                >
+                                                    -
+                                                </button>
+                                                <span className="text-sm">{item.quantity}</span>
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    disabled={cartLoading || !item.in_stock || item.quantity >= item.stock}
+                                                    className="w-6 h-6 rounded border border-gray-300 flex items-center justify-center disabled:opacity-50"
+                                                >
+                                                    +
+                                                </button>
+                                                <button
+                                                    onClick={() => removeItem(item.id)}
+                                                    disabled={cartLoading}
+                                                    className="ml-2 text-red-600 hover:text-red-700 text-sm disabled:opacity-50"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
                                         </div>
-                                        <span className="font-semibold">
-                                            ${(item.price * item.quantity).toFixed(2)}
-                                        </span>
+                                        <div className="text-right">
+                                            <p className="font-semibold">৳{item.subtotal.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</p>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="border-t pt-4 space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Subtotal</span>
-                                    <span>${subtotal.toFixed(2)}</span>
+                            {/* Totals */}
+                            <div className="space-y-2 border-t pt-4">
+                                <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span>৳{subtotal.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Shipping</span>
-                                    <span>${shipping.toFixed(2)}</span>
+                                <div className="flex justify-between">
+                                    <span>Shipping</span>
+                                    <span>৳{shipping.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Tax</span>
-                                    <span>${tax.toFixed(2)}</span>
+                                <div className="flex justify-between">
+                                    <span>Tax</span>
+                                    <span>৳{tax.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                                <div className="flex justify-between font-bold text-lg border-t pt-2">
                                     <span>Total</span>
-                                    <span>${total.toFixed(2)}</span>
+                                    <span>৳{total.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
-
-                            <Link
-                                href="/"
-                                className="block text-center text-indigo-600 hover:text-indigo-700 mt-4 text-sm"
-                            >
-                                Continue Shopping
-                            </Link>
                         </div>
                     </div>
                 </div>

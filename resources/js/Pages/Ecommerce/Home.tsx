@@ -22,66 +22,10 @@ interface HomeProps {
 }
 
 export default function Home({ auth, featuredProducts = [] }: HomeProps) {
-    // Sample products if none provided
-    const products: Product[] = featuredProducts.length > 0 ? featuredProducts : [
-        {
-            id: 1,
-            name: 'Wireless Headphones',
-            slug: 'wireless-headphones',
-            price: 99.99,
-            image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
-            description: 'Premium wireless headphones with noise cancellation',
-            category: 'Electronics'
-        },
-        {
-            id: 2,
-            name: 'Smart Watch',
-            slug: 'smart-watch',
-            price: 249.99,
-            image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500',
-            description: 'Feature-rich smartwatch with health tracking',
-            category: 'Electronics'
-        },
-        {
-            id: 3,
-            name: 'Running Shoes',
-            slug: 'running-shoes',
-            price: 129.99,
-            image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
-            description: 'Comfortable running shoes for all terrains',
-            category: 'Fashion'
-        },
-        {
-            id: 4,
-            name: 'Leather Backpack',
-            slug: 'leather-backpack',
-            price: 179.99,
-            image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500',
-            description: 'Stylish leather backpack for everyday use',
-            category: 'Fashion'
-        },
-        {
-            id: 5,
-            name: 'Coffee Maker',
-            slug: 'coffee-maker',
-            price: 89.99,
-            image: 'https://images.unsplash.com/photo-1517668808823-9e24dd21b9d0?w=500',
-            description: 'Automatic coffee maker for perfect brew',
-            category: 'Home'
-        },
-        {
-            id: 6,
-            name: 'Yoga Mat',
-            slug: 'yoga-mat',
-            price: 39.99,
-            image: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=500',
-            description: 'Premium non-slip yoga mat',
-            category: 'Fitness'
-        },
-    ];
+    const products: Product[] = featuredProducts;
 
     return (
-        <EcommerceLayout auth={auth}>
+        <EcommerceLayout>
             <Head title="Home - ShopHub" />
 
             {/* Hero Section */}
@@ -95,7 +39,7 @@ export default function Home({ auth, featuredProducts = [] }: HomeProps) {
                             Discover amazing products at best prices
                         </p>
                         <Link
-                            href="/products"
+                            href="#"
                             className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition shadow-lg"
                         >
                             Shop Now
@@ -111,55 +55,65 @@ export default function Home({ auth, featuredProducts = [] }: HomeProps) {
                     <p className="text-gray-600">Handpicked products just for you</p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {products.map((product) => (
-                        <Link
-                            key={product.id}
-                            href={`/products/${product.slug}`}
-                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
-                        >
-                            <div className="aspect-w-16 aspect-h-9 bg-gray-200 overflow-hidden">
-                                <img
-                                    src={product.image}
-                                    alt={product.name}
-                                    className="w-full h-64 object-cover group-hover:scale-110 transition duration-300"
-                                />
-                            </div>
-                            <div className="p-6">
-                                {product.category && (
-                                    <span className="text-xs text-indigo-600 font-semibold uppercase">
-                                        {product.category}
-                                    </span>
-                                )}
-                                <h3 className="text-xl font-semibold text-gray-900 mt-2 mb-2 group-hover:text-indigo-600 transition">
-                                    {product.name}
-                                </h3>
-                                {product.description && (
-                                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                        {product.description}
-                                    </p>
-                                )}
-                                <div className="flex items-center justify-between">
-                                    <span className="text-2xl font-bold text-indigo-600">
-                                        ${product.price.toFixed(2)}
-                                    </span>
-                                    <span className="text-indigo-600 group-hover:translate-x-1 transition inline-block">
-                                        View Details →
-                                    </span>
-                                </div>
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-
-                <div className="text-center mt-12">
-                    <Link
-                        href="/products"
-                        className="inline-block bg-indigo-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
-                    >
-                        View All Products
-                    </Link>
-                </div>
+                {products.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {products.map((product) => (
+                                <Link
+                                    key={product.id}
+                                    href={`/products/${product.slug}`}
+                                    className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition group"
+                                >
+                                    <div className="aspect-w-16 aspect-h-9 bg-gray-200 overflow-hidden">
+                                        {product.image ? (
+                                            <img
+                                                src={product.image}
+                                                alt={product.name}
+                                                className="w-full h-64 object-cover group-hover:scale-110 transition duration-300"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-64 flex items-center justify-center bg-gray-100">
+                                                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-6">
+                                        {product.category && (
+                                            <span className="text-xs text-indigo-600 font-semibold uppercase">
+                                                {product.category}
+                                            </span>
+                                        )}
+                                        <h3 className="text-xl font-semibold text-gray-900 mt-2 mb-2 group-hover:text-indigo-600 transition">
+                                            {product.name}
+                                        </h3>
+                                        {product.description && (
+                                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                                                {product.description}
+                                            </p>
+                                        )}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-2xl font-bold text-indigo-600">
+                                                ৳{product.price.toLocaleString('en-BD', { minimumFractionDigits: 2 })}
+                                            </span>
+                                            <span className="text-indigo-600 group-hover:translate-x-1 transition inline-block">
+                                                View Details →
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center py-12">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <p className="mt-4 text-gray-600">No products available at the moment</p>
+                    </div>
+                )}
             </section>
 
             {/* Features Section */}

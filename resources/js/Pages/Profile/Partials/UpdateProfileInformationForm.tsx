@@ -5,12 +5,31 @@ import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 
+interface UpdateProfileInformationProps {
+    mustVerifyEmail?: boolean;
+    status?: string;
+    className?: string;
+}
+
+interface AuthUser {
+    name: string;
+    email: string;
+    email_verified_at?: string | null;
+}
+
+interface PageProps {
+    auth: {
+        user: AuthUser;
+    };
+    [key: string]: any; // Allow additional properties from Inertia
+}
+
 export default function UpdateProfileInformation({
     mustVerifyEmail,
     status,
     className = '',
-}) {
-    const user = usePage().props.auth.user;
+}: UpdateProfileInformationProps) {
+    const user = (usePage().props as unknown as PageProps).auth.user;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
@@ -18,7 +37,7 @@ export default function UpdateProfileInformation({
             email: user.email,
         });
 
-    const submit = (e) => {
+    const submit = (e: React.FormEvent) => {
         e.preventDefault();
 
         patch(route('profile.update'));
@@ -38,7 +57,7 @@ export default function UpdateProfileInformation({
 
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                    <InputLabel htmlFor="name" value="Name" children={undefined} />
 
                     <TextInput
                         id="name"
@@ -54,7 +73,7 @@ export default function UpdateProfileInformation({
                 </div>
 
                 <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                    <InputLabel htmlFor="email" value="Email" children={undefined} />
 
                     <TextInput
                         id="email"

@@ -7,9 +7,13 @@ import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 
-export default function DeleteUserForm({ className = '' }) {
+interface DeleteUserFormProps {
+    className?: string;
+}
+
+export default function DeleteUserForm({ className = '' }: DeleteUserFormProps) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
-    const passwordInput = useRef();
+    const passwordInput = useRef<HTMLInputElement>(null);
 
     const {
         data,
@@ -27,13 +31,13 @@ export default function DeleteUserForm({ className = '' }) {
         setConfirmingUserDeletion(true);
     };
 
-    const deleteUser = (e) => {
+    const deleteUser = (e: React.FormEvent) => {
         e.preventDefault();
 
         destroy(route('profile.destroy'), {
             preserveScroll: true,
             onSuccess: () => closeModal(),
-            onError: () => passwordInput.current.focus(),
+            onError: () => passwordInput.current?.focus(),
             onFinish: () => reset(),
         });
     };
@@ -60,7 +64,7 @@ export default function DeleteUserForm({ className = '' }) {
                 </p>
             </header>
 
-            <DangerButton onClick={confirmUserDeletion}>
+            <DangerButton onClick={confirmUserDeletion} disabled={false}>
                 Delete Account
             </DangerButton>
 
@@ -82,6 +86,7 @@ export default function DeleteUserForm({ className = '' }) {
                             htmlFor="password"
                             value="Password"
                             className="sr-only"
+                            children={undefined}
                         />
 
                         <TextInput
@@ -105,7 +110,7 @@ export default function DeleteUserForm({ className = '' }) {
                     </div>
 
                     <div className="mt-6 flex justify-end">
-                        <SecondaryButton onClick={closeModal}>
+                        <SecondaryButton onClick={closeModal} disabled={false}>
                             Cancel
                         </SecondaryButton>
 

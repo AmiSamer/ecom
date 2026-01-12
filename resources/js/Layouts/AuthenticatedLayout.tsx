@@ -5,8 +5,25 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
+interface AuthenticatedLayoutProps {
+    header?: React.ReactNode;
+    children: React.ReactNode;
+}
+
+interface AuthUser {
+    name: string;
+    email: string;
+}
+
+interface PageProps {
+    auth: {
+        user: AuthUser;
+    };
+    [key: string]: any;
+}
+
+export default function AuthenticatedLayout({ header, children }: AuthenticatedLayoutProps) {
+    const user = (usePage().props as unknown as PageProps).auth.user;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);

@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Jobs\SendLowStockNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -107,6 +108,12 @@ class OrderController extends Controller
                 // Update product stock
                 $product->current_stock_quantity -= $item->quantity;
                 $product->save();
+                
+                // Check if stock is low and dispatch notification job
+                $product->refresh(); // Refresh to get updated stock
+                if ($product->isLowStock()) {
+                    SendLowStockNotification::dispatch($product);
+                }
             }
 
             // Clear the cart

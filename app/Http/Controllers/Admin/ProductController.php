@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Jobs\SendLowStockNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -166,7 +167,12 @@ class ProductController extends Controller
             $data['image'] = $storedPath;
         }
 
-        Product::create($data);
+        $product = Product::create($data);
+        
+        // Check if stock is low and dispatch notification job
+        if ($product->isLowStock()) {
+            SendLowStockNotification::dispatch($product);
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Product created successfully.');
@@ -263,6 +269,11 @@ class ProductController extends Controller
         }
 
         $product->save();
+        
+        // Check if stock is low and dispatch notification job
+        if ($product->isLowStock()) {
+            SendLowStockNotification::dispatch($product);
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Product updated successfully.');

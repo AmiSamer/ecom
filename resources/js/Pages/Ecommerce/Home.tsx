@@ -29,13 +29,25 @@ export default function Home({ auth, featuredProducts = [] }: HomeProps) {
             <Head title="Home - ShopHub" />
 
             {/* Hero Section */}
-            <section className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+            <section className="relative bg-gray-900 text-white">
+                {/* Background Image */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    style={{
+                        backgroundImage: "url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')"
+                    }}
+                >
+                    {/* Overlay for better text readability */}
+                    <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+                </div>
+                
+                {/* Content */}
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
                     <div className="text-center">
-                        <h1 className="text-4xl md:text-6xl font-bold mb-6">
+                        <h1 className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">
                             Welcome to ShopHub
                         </h1>
-                        <p className="text-xl md:text-2xl mb-8 text-indigo-100">
+                        <p className="text-xl md:text-2xl mb-8 text-white drop-shadow-md">
                             Discover amazing products at best prices
                         </p>
                         <Link

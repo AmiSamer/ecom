@@ -67,7 +67,10 @@ export default function EcommerceLayout({ children }: EcommerceLayoutProps) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
-                        <Link href="/" className="flex items-center">
+                        <Link href="/" className="flex items-center space-x-2">
+                            <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
                             <span className="text-2xl font-bold text-indigo-600">ShopHub</span>
                         </Link>
 
@@ -143,7 +146,7 @@ export default function EcommerceLayout({ children }: EcommerceLayoutProps) {
                                 </div>
                             ) : (
                                 <div className="flex space-x-2">
-                                    <Link href={route('login')} className="text-gray-700 hover:text-indigo-600 transition">
+                                    <Link href={route('login')} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">
                                         Login
                                     </Link>
                                     <Link href={route('register')} className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition">

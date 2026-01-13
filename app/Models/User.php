@@ -48,6 +48,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'status' => 'integer',
+            'role_id' => 'integer',
         ];
     }
 
@@ -64,7 +65,7 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->role_id === 1;
+        return (int) $this->role_id === 1;
     }
 
     /**
@@ -72,7 +73,7 @@ class User extends Authenticatable
      */
     public function isUser(): bool
     {
-        return $this->role_id === 2;
+        return (int) $this->role_id === 2;
     }
 
     /**

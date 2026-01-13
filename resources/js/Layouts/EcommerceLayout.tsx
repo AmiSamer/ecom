@@ -129,7 +129,7 @@ export default function EcommerceLayout({ children }: EcommerceLayoutProps) {
                                             <Dropdown.Link href={route('profile.edit')}>
                                                 Profile
                                             </Dropdown.Link>
-                                            {auth.user && auth.user.role_id === 1 && (
+                                            {auth.user && Number(auth.user.role_id) === 1 && (
                                                 <Dropdown.Link href={route('dashboard')}>
                                                     Dashboard
                                                 </Dropdown.Link>

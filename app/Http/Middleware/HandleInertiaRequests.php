@@ -39,7 +39,7 @@ class HandleInertiaRequests extends Middleware
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role_id' => $user->role_id,
+                    'role_id' => (int) $user->role_id, // Ensure integer type
                     'role' => $user->role ? [
                         'id' => $user->role->id,
                         'name' => $user->role->name,

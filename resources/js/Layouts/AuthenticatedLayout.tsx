@@ -48,7 +48,7 @@ export default function AuthenticatedLayout({ header, children }: AuthenticatedL
                             </div>
 
                             <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                {user?.role_id === 1 ? (
+                                {user && Number(user.role_id) === 1 ? (
                                     <NavLink
                                         href={route('dashboard')}
                                         active={route().current('dashboard')}
@@ -161,7 +161,7 @@ export default function AuthenticatedLayout({ header, children }: AuthenticatedL
                     }
                 >
                     <div className="space-y-1 pb-3 pt-2">
-                        {user?.role_id === 1 ? (
+                        {user && Number(user.role_id) === 1 ? (
                             <ResponsiveNavLink
                                 href={route('dashboard')}
                                 active={route().current('dashboard')}

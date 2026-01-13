@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 12, 2026 at 12:41 PM
+-- Generation Time: Jan 13, 2026 at 08:15 AM
 -- Server version: 8.0.30
 -- PHP Version: 8.1.10
 
@@ -32,6 +32,16 @@ CREATE TABLE `cache` (
   `value` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
   `expiration` int NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `cache`
+--
+
+INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
+('shophub-cache-admin@example.com|127.0.0.1', 'i:1;', 1768281050),
+('shophub-cache-admin@example.com|127.0.0.1:timer', 'i:1768281050;', 1768281050),
+('shophub-cache-sa93.one@gmail.com|127.0.0.1', 'i:3;', 1768281069),
+('shophub-cache-sa93.one@gmail.com|127.0.0.1:timer', 'i:1768281069;', 1768281069);
 
 -- --------------------------------------------------------
 
@@ -167,8 +177,14 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `product_category_id`, `name`, `slug`, `description`, `image`, `sku`, `brand`, `price`, `current_stock_quantity`, `low_stock_quantity`, `status`, `updated_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 1, 'Men Footwear', 'men-footwear', 'latest collection of men footwear', 'products/d83de40c-a355-48b4-b8d3-32560215d239.webp', 'men-footwear-product', 'Bata', '1200.00', 0, 7, 1, 1, '2026-01-12 03:14:38', '2026-01-12 05:25:53', NULL),
-(2, 1, 'Kid Footwear', 'kid-footwear', 'khbkj', 'products/35f450f4-5059-4ed1-a27f-184e2390baf1.webp', 'khkjhj', NULL, '2100.00', 15, 2, 1, 1, '2026-01-12 05:29:06', '2026-01-12 05:29:06', NULL);
+(1, 1, 'Men Footwear', 'men-footwear', 'latest collection of men footwear', 'products/d83de40c-a355-48b4-b8d3-32560215d239.webp', 'men-footwear-product', 'Bata', '1200.00', 0, 7, 1, 1, '2026-01-12 03:14:38', '2026-01-12 23:59:13', '2026-01-12 23:59:13'),
+(2, 1, 'Kid Footwear', 'kid-footwear', 'khbkj', 'products/35f450f4-5059-4ed1-a27f-184e2390baf1.webp', 'khkjhj', NULL, '2100.00', 13, 2, 1, 1, '2026-01-12 05:29:06', '2026-01-12 23:59:11', '2026-01-12 23:59:11'),
+(3, 3, 'Travel Bag', 'travel-bag', 'A durable and lightweight travel bag designed for comfort and convenience on the go. Spacious compartments keep your essentials organized, making it perfect for trips, tours, or daily travel.', 'products/75195c20-5123-4d71-893b-b853956b6803.webp', 'travel-bag', NULL, '1550.00', 10, 5, 1, 1, '2026-01-13 00:04:26', '2026-01-13 00:04:26', NULL),
+(4, 3, 'HP Laptop Bag', 'hp-laptop-bag', 'A sleek and durable laptop bag designed to protect your device on the move. Features padded compartments and smart pockets for organized, comfortable everyday travel.', 'products/6ae037cc-9037-4f29-b277-df5e19163696.webp', 'laptop-bag', 'HP', '1200.00', 15, 3, 1, 1, '2026-01-13 00:06:10', '2026-01-13 00:06:10', NULL),
+(5, 2, 'Bata Stylish Men Footwear', 'bata-stylish-men-footwear', 'Stylish and comfortable men’s footwear built for all-day wear. Durable design with a perfect blend of fashion and functionality for any occasion.', 'products/4d60a655-9eee-47bb-baae-b17514688526.webp', 'men-footwear', 'Bata', '2400.00', 20, 10, 1, 1, '2026-01-13 00:08:01', '2026-01-13 00:08:01', NULL),
+(6, 2, 'Bata Stylish Women\'s Footwear', 'bata-stylish-womens-footwear', 'Trendy and comfortable women’s footwear crafted for style and all-day wear. Lightweight and durable, perfect for casual outings or special occasions.', 'products/cb470946-493b-4e17-b14c-66a015518aa8.webp', 'women-footwear', 'Bata', '1850.00', 15, 10, 1, 1, '2026-01-13 00:09:56', '2026-01-13 00:31:33', NULL),
+(7, 4, 'Stylish Wrist Watch', 'stylish-wrist-watch', 'Elegant and precise wrist watch designed to complement any outfit. Durable and stylish, perfect for daily wear or special occasions.', 'products/50852d5c-dffa-4f89-8ebd-f7b662d19276.webp', 'wrist-watch', 'FastTrack', '2540.00', 7, 4, 1, 1, '2026-01-13 00:11:32', '2026-01-13 00:28:05', NULL),
+(8, 5, 'test product', 'test-product', 'test test', 'products/aba8ff5c-a525-43e0-ad7c-c3da1916fb84.webp', 'test-prod', 'test brand', '1200.00', 10, 2, 1, 1, '2026-01-13 00:32:27', '2026-01-13 00:32:27', NULL);
 
 -- --------------------------------------------------------
 
@@ -209,7 +225,11 @@ CREATE TABLE `product_categories` (
 --
 
 INSERT INTO `product_categories` (`id`, `name`, `description`, `image`, `sku`, `status`, `updated_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'Footwear', 'Footwear for men, women and kids', 'categories/2b86904d-965d-498d-bc45-56397ae4ccd2.webp', 'footwears', 1, 1, '2026-01-12 02:08:55', '2026-01-12 02:10:30', NULL);
+(1, 'Footwear', 'Footwear for men, women and kids', 'categories/2b86904d-965d-498d-bc45-56397ae4ccd2.webp', 'footwears', 1, 1, '2026-01-12 02:08:55', '2026-01-12 23:59:05', '2026-01-12 23:59:05'),
+(2, 'Footwear', NULL, 'categories/137485fd-4f33-45de-9879-b1f85294d445.webp', NULL, 1, 1, '2026-01-12 23:59:41', '2026-01-12 23:59:41', NULL),
+(3, 'Bags', NULL, 'categories/7ce6b1de-f3a7-452e-9016-c5f621809d7b.webp', NULL, 1, 1, '2026-01-13 00:00:02', '2026-01-13 00:00:02', NULL),
+(4, 'Wrist Watch', NULL, 'categories/936aaa05-ebb2-4d0e-bc8a-e1dd31d79182.webp', NULL, 1, 1, '2026-01-13 00:01:45', '2026-01-13 00:30:21', NULL),
+(5, 'test category', 'test', 'categories/c6ccd3a6-3297-406d-9b38-fa82525d772a.webp', NULL, 1, 1, '2026-01-13 00:30:44', '2026-01-13 00:30:44', NULL);
 
 -- --------------------------------------------------------
 
@@ -267,7 +287,10 @@ INSERT INTO `sales` (`id`, `order_number`, `user_id`, `total_amount`, `subtotal`
 (1, 'ORD-20260112-5EF519', 2, '2400.00', '2400.00', '0.00', '0.00', 'cash_on_delivery', 'pending', 'pending', 'laalbagh, dhaka', '01513470130', NULL, '2026-01-12 05:05:25', '2026-01-12 05:05:25'),
 (2, 'ORD-20260112-DD7590', 2, '4800.00', '4800.00', '0.00', '0.00', 'bank_transfer', 'pending', 'pending', 'Mirpur', '01513470130', NULL, '2026-01-12 05:10:05', '2026-01-12 05:10:05'),
 (3, 'ORD-20260112-F0DA69', 2, '3600.00', '3600.00', '0.00', '0.00', 'card', 'pending', 'pending', 'Dhanmondi, Dhaka', '01513470130', NULL, '2026-01-12 05:18:55', '2026-01-12 05:18:55'),
-(4, 'ORD-20260112-13918F', 2, '3600.00', '3600.00', '0.00', '0.00', 'bank_transfer', 'pending', 'pending', 'lkljlj', '01513470130', NULL, '2026-01-12 05:25:53', '2026-01-12 05:25:53');
+(4, 'ORD-20260112-13918F', 2, '3600.00', '3600.00', '0.00', '0.00', 'bank_transfer', 'pending', 'pending', 'lkljlj', '01513470130', NULL, '2026-01-12 05:25:53', '2026-01-12 05:25:53'),
+(5, 'ORD-20260113-8B5A44', 2, '2100.00', '2100.00', '0.00', '0.00', 'cash_on_delivery', 'pending', 'pending', 'ijjj', '0', NULL, '2026-01-12 22:44:56', '2026-01-12 22:44:56'),
+(6, 'ORD-20260113-93A7CC', 2, '2100.00', '2100.00', '0.00', '0.00', 'cash_on_delivery', 'pending', 'pending', 'kjjkn', '01513470130', NULL, '2026-01-12 23:09:29', '2026-01-12 23:09:29'),
+(7, 'ORD-20260113-58C382', 2, '7620.00', '7620.00', '0.00', '0.00', 'cash_on_delivery', 'pending', 'pending', 'Mirpur, Dhaka', '01543470120', NULL, '2026-01-13 00:28:05', '2026-01-13 00:28:05');
 
 -- --------------------------------------------------------
 
@@ -295,7 +318,10 @@ INSERT INTO `sale_items` (`id`, `sale_id`, `product_id`, `product_name`, `price`
 (1, 1, 1, 'Men Footwear', '1200.00', 2, '2400.00', '2026-01-12 05:05:25', '2026-01-12 05:05:25'),
 (2, 2, 1, 'Men Footwear', '1200.00', 4, '4800.00', '2026-01-12 05:10:05', '2026-01-12 05:10:05'),
 (3, 3, 1, 'Men Footwear', '1200.00', 3, '3600.00', '2026-01-12 05:18:55', '2026-01-12 05:18:55'),
-(4, 4, 1, 'Men Footwear', '1200.00', 3, '3600.00', '2026-01-12 05:25:53', '2026-01-12 05:25:53');
+(4, 4, 1, 'Men Footwear', '1200.00', 3, '3600.00', '2026-01-12 05:25:53', '2026-01-12 05:25:53'),
+(5, 5, 2, 'Kid Footwear', '2100.00', 1, '2100.00', '2026-01-12 22:44:56', '2026-01-12 22:44:56'),
+(6, 6, 2, 'Kid Footwear', '2100.00', 1, '2100.00', '2026-01-12 23:09:29', '2026-01-12 23:09:29'),
+(7, 7, 7, 'Stylish Wrist Watch', '2540.00', 3, '7620.00', '2026-01-13 00:28:05', '2026-01-13 00:28:05');
 
 -- --------------------------------------------------------
 
@@ -317,7 +343,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('YS1IqeGqx1BaJyUhxAY2klpsZGxYE17vemgc2Jhi', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0', 'YTozOntzOjY6Il90b2tlbiI7czo0MDoicEV3ZkowNGJabTQzUFlhSjlQZWx0UEdKOTNGUTB1N01la0RCbzRqSSI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6Mjp7czozOiJ1cmwiO3M6MjE6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMCI7czo1OiJyb3V0ZSI7czo0OiJob21lIjt9fQ==', 1768220341);
+('ncgmuHMx1oBGuhWZjoLR9b1f7sI06aLtW5h9kkf5', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0', 'YToyOntzOjY6Il90b2tlbiI7czo0MDoid1FkUlkwVjdWYUdCSlk2UUJ0WEtsYjlPTDBRa2dxYjZ1N2xIeTU5dSI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1768285998);
 
 -- --------------------------------------------------------
 
@@ -345,8 +371,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `role_id`, `name`, `email`, `email_verified_at`, `password`, `status`, `updated_by`, `remember_token`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 1, 'Admin User', 'sam93.one@gmail.com', NULL, '$2y$12$/FZVbo.qs3.HuVqtyGNXqO/CzHHWughYIq2QVNQtJtEXWC6aMU.bO', 1, NULL, 'iv2V7hXTTetabujP9I7uOvQUMwLzwpkV51UDjlj46lH592Peurd3e4N6iKyT', '2026-01-12 00:38:46', '2026-01-12 00:45:43', NULL),
-(2, 2, 'Test User', 'user@example.com', NULL, '$2y$12$fufhsF4RUmc3v7fO9rgmfObkUDX3RgcEZqtnLzq5htMCyFCD3mfha', 1, NULL, NULL, '2026-01-12 00:38:46', '2026-01-12 00:46:06', NULL);
+(1, 1, 'Admin User', 'sam93.one@gmail.com', NULL, '$2y$12$/FZVbo.qs3.HuVqtyGNXqO/CzHHWughYIq2QVNQtJtEXWC6aMU.bO', 1, NULL, 'KZaiH6wr3MR9nyEJqQfoeedmswY57DosD6kllUWKDqRlzigxbqTW2jWDiFvZ', '2026-01-12 00:38:46', '2026-01-12 00:45:43', NULL),
+(2, 2, 'Shuvo', 'user@example.com', NULL, '$2y$12$fufhsF4RUmc3v7fO9rgmfObkUDX3RgcEZqtnLzq5htMCyFCD3mfha', 1, NULL, NULL, '2026-01-12 00:38:46', '2026-01-13 00:28:31', NULL);
 
 --
 -- Indexes for dumped tables
@@ -484,19 +510,19 @@ ALTER TABLE `migrations`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `product_carts`
 --
 ALTER TABLE `product_carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `product_categories`
 --
 ALTER TABLE `product_categories`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `roles`
@@ -508,13 +534,13 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `sales`
 --
 ALTER TABLE `sales`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `sale_items`
 --
 ALTER TABLE `sale_items`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `users`

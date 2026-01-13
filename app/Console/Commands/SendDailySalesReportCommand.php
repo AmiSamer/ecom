@@ -60,8 +60,8 @@ class SendDailySalesReportCommand extends Command
             ];
         })->toArray();
 
-        // Dispatch job to send email
-        SendDailySalesReport::dispatch(
+        // Dispatch job to send email (synchronously - no queue worker needed)
+        SendDailySalesReport::dispatchSync(
             $salesData,
             $totalSales,
             $totalOrders,
